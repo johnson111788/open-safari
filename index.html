@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captain Safari: A World Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --color-bg: #FDFBF7;
+            --color-bg-alt: #F5F1EA;
+            --color-text: #1A1A1A;
+            --color-text-muted: #5C5C5C;
+            --color-accent: #2563EB;
+            --color-accent-light: #DBEAFE;
+            --color-border: #E5E1D8;
+            --font-serif: 'Instrument Serif', Georgia, serif;
+            --font-sans: 'DM Sans', system-ui, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            font-size: 17px;
+            overflow-x: hidden;
+        }
+
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1.25rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(253, 251, 247, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--color-border);
+            transition: all 0.3s ease;
+        }
+
+        .nav-logo {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--color-text);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--color-text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--color-text);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 8rem 3rem 4rem;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .hero-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero h1 {
+            font-family: var(--font-serif);
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            font-weight: 400;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.2s;
+        }
+
+        .hero-authors {
+            font-size: 1.1rem;
+            color: var(--color-text);
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.4s;
+        }
+
+        .hero-affiliations {
+            font-size: 0.95rem;
+            color: var(--color-text-muted);
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.5s;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.6s;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--color-text);
+            color: var(--color-bg);
+        }
+
+        .btn-primary:hover {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-bg-alt);
+            border-color: var(--color-text-muted);
+        }
+
+        .hero-video-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            animation-delay: 0.8s;
+            border: 1px solid var(--color-border);
+        }
+
+        .hero-video {
+            width: 100%;
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Section Styles */
+        section {
+            padding: 6rem 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--color-accent);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .section-title {
+            font-family: var(--font-serif);
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        /* Abstract Section */
+        #abstract {
+            background: var(--color-bg-alt);
+            max-width: none;
+        }
+
+        .abstract-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .abstract-text {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: var(--color-text-muted);
+            text-align: justify;
+        }
+
+        .abstract-text strong {
+            color: var(--color-text);
+            font-weight: 600;
+        }
+
+        /* Method Section */
+        .method-visual {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .method-visual img {
+            width: 100%;
+            display: block;
+        }
+
+        .method-caption {
+            font-size: 0.95rem;
+            color: var(--color-text-muted);
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Results Section */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-video {
+            width: 100%;
+            display: block;
+        }
+
+        .result-info {
+            padding: 1.5rem;
+        }
+
+        .result-prompt {
+            font-size: 0.95rem;
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+
+        .result-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-accent);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .result-trajectory {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-trajectory img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            background: #fff;
+        }
+
+        .result-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* BibTeX */
+        .bibtex-container {
+            background: var(--color-text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .bibtex-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .bibtex-header span {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .copy-btn {
+            background: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .bibtex-code {
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--color-text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* Experimental Results Section */
+        #experimental-analysis {
+            background: var(--color-text);
+            color: var(--color-bg);
+            max-width: none;
+        }
+
+        #experimental-analysis .section-label {
+            color: var(--color-accent-light);
+        }
+
+        #experimental-analysis .section-title {
+            color: var(--color-bg);
+        }
+
+        .results-table {
+            margin-top: 3rem;
+            overflow-x: auto;
+            margin-bottom: 4rem;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .table-caption {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0 auto 1rem auto;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .model-name {
+            font-weight: 500;
+        }
+
+        .best {
+            font-weight: 700;
+            color: #4ade80;
+            /* Green for best */
+        }
+
+        .second-best {
+            text-decoration: underline;
+            text-decoration-color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <a href="#" class="nav-logo">Captain Safari</a>
+        <ul class="nav-links">
+            <li><a href="#abstract">Abstract</a></li>
+            <li><a href="#method">Method</a></li>
+            <li><a href="#opensafari">Dataset</a></li>
+            <li><a href="#experimental-analysis">Experiments</a></li>
+            <li><a href="#results">Gallery</a></li>
+            <li><a href="Captain_Safari.pdf" target="_blank">Paper</a></li>
+        </ul>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Captain Safari: A World Engine</h1>
+
+            <div class="hero-authors">
+                Yu-Cheng Chou<sup>1</sup>, Xingrui Wang<sup>1</sup>, Yitong Li<sup>2</sup>, Jiahao Wang<sup>1</sup>,
+                Hanting Liu<sup>1</sup>,<br>
+                Cihang Xie<sup>3</sup>, Alan Yuille<sup>1</sup>, Junfei Xiao<sup>1</sup>
+            </div>
+
+            <div class="hero-affiliations">
+                <sup>1</sup>Johns Hopkins University &nbsp; <sup>2</sup>Tsinghua University &nbsp; <sup>3</sup>UC Santa
+                Cruz
+            </div>
+
+            <div class="hero-actions">
+                <a href="Captain_Safari.pdf" class="btn btn-primary" target="_blank">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                    Paper
+                </a>
+                <a href="#" class="btn btn-secondary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    Code (Coming Soon)
+                </a>
+                <a href="#" class="btn btn-secondary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                        </path>
+                    </svg>
+                    OpenSafari Dataset (Coming Soon)
+                </a>
+            </div>
+
+            <div class="hero-video-container">
+                <video class="hero-video" autoplay muted loop playsinline controls>
+                    <source src="asset/CaptainSafari_Trailer.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+    </header>
+
+    <section id="abstract">
+        <div class="abstract-content">
+            <div class="section-header">
+                <span class="section-label">Abstract</span>
+                <h2 class="section-title">Overview</h2>
+            </div>
+            <p class="abstract-text">
+                World engines aim to synthesize long, 3D-consistent videos that support interactive exploration of a
+                scene under user-controlled camera motion. However, existing systems struggle under aggressive 6-DoF
+                trajectories and complex outdoor layouts: they lose long-range geometric coherence, deviate from the
+                target path, or collapse into overly conservative motion.
+                <br><br>
+                To this end, we introduce <strong>Captain Safari</strong>, a pose-conditioned world engine that
+                generates videos by retrieving from a persistent world memory. Given a camera path, our method maintains
+                a dynamic local memory and uses a retriever to fetch pose-aligned world tokens, which then condition
+                video generation along the trajectory. This design enables the model to maintain stable 3D structure
+                while accurately executing challenging camera maneuvers.
+                <br><br>
+                To evaluate this setting, we curate <strong>OpenSafari</strong>, a new in-the-wild FPV dataset
+                containing high-dynamic drone videos with verified camera trajectories. Across video quality, 3D
+                consistency, and trajectory following, Captain Safari substantially outperforms state-of-the-art
+                camera-controlled video generators.
+            </p>
+        </div>
+    </section>
+
+    <section id="method">
+        <div class="section-header">
+            <span class="section-label">Method</span>
+            <h2 class="section-title">How It Works</h2>
+        </div>
+
+        <div class="method-visual">
+            <img src="asset/teaser.png" alt="Captain Safari Teaser">
+        </div>
+        <p class="method-caption">
+            <strong>Captain Safari</strong> is a pose-aware world engine that generates long-horizon,
+            3D-consistent FPV
+            videos from any user-specified camera trajectory. By retrieving pose-aligned world memory, it keeps geometry
+            stable across large viewpoint changes and reconstructs crisp, well-formed structures while faithfully
+            tracking aggressive 6-DoF motion.
+        </p>
+
+        <br><br>
+
+        <div class="section-header">
+            <h2 class="section-title">Memory-Guided Generation</h2>
+        </div>
+
+        <div class="method-visual">
+            <img src="asset/pipeline.png" alt="Captain Safari Pipeline">
+        </div>
+        <p class="method-caption">
+            <strong>Captain Safari Pipeline.</strong> Given a local memory, we represent each time step by a
+            pose token
+            and its associated memory tokens. Our retriever is designed to (i) jointly encode pose-memory pairs into a
+            coherent world representation, and (ii) extract, for any query pose, a compact set of pose-aligned tokens
+            that summarize the most relevant parts of this local world.
+        </p>
+    </section>
+
+    <section id="opensafari">
+        <div class="section-header">
+            <span class="section-label">Dataset</span>
+            <h2 class="section-title">OpenSafari</h2>
+        </div>
+
+        <div class="method-visual">
+            <img src="asset/data_pipeline.png" alt="OpenSafari Data Pipeline">
+        </div>
+        <p class="method-caption">
+            <strong>OpenSafari Data Pipeline.</strong> A new in-the-wild FPV dataset with rigorously verified
+            camera
+            trajectories, designed to stress-test geometry-consistent, camera-controllable video generation. We curate
+            clips through a compact, multi-stage pipeline that filters, reconstructs, and verifies trajectories,
+            yielding clean, motion-rich videos with reliable camera paths.
+        </p>
+    </section>
+
+    <section id="experimental-analysis">
+        <div class="results-content">
+            <div class="section-header">
+                <span class="section-label">Analysis</span>
+                <h2 class="section-title">Experimental Analysis</h2>
+            </div>
+
+            <div class="results-table">
+                <p class="table-caption">
+                    <strong>Benchmark camera-controlled video generation.</strong> <em>Captain Safari</em>
+                    ranks first in 3D consistency and trajectory following with competitive video quality. Compared to
+                    the ablated variant without memory, <em>Captain Safari</em> substantially improves 3D consistency
+                    and trajectory following, with only a slight trade-off in video quality.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th colspan="2">Video Quality</th>
+                            <th colspan="2">3D consistency</th>
+                            <th colspan="3">Trajectory Following</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th>FVD &darr;</th>
+                            <th>LPIPS &darr;</th>
+                            <th>MEt3R &darr;</th>
+                            <th>Recon. &uarr;</th>
+                            <th>AUC@30 &uarr;</th>
+                            <th>AUC@15 &uarr;</th>
+                            <th>CosSim &uarr;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="model-name">Geometry Forcing</td>
+                            <td>2662.75</td>
+                            <td>0.667</td>
+                            <td>0.4834</td>
+                            <td>0.877</td>
+                            <td>0.168</td>
+                            <td>0.056</td>
+                            <td>0.429</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Real-CamI2V</td>
+                            <td>1585.61</td>
+                            <td>0.513</td>
+                            <td class="second-best">0.3703</td>
+                            <td class="second-best">0.923</td>
+                            <td>0.174</td>
+                            <td>0.051</td>
+                            <td>0.296</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Wan2.2-5B-Control-Camera</td>
+                            <td>1387.75</td>
+                            <td>0.545</td>
+                            <td>0.3932</td>
+                            <td>0.767</td>
+                            <td>0.181</td>
+                            <td>0.054</td>
+                            <td>0.420</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Captain Safari w/o <em>Mem.</em></td>
+                            <td class="best">998.47</td>
+                            <td class="best">0.504</td>
+                            <td>0.3720</td>
+                            <td>0.912</td>
+                            <td class="second-best">0.193</td>
+                            <td class="best">0.068</td>
+                            <td class="second-best">0.508</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Captain Safari</td>
+                            <td class="second-best">1023.46</td>
+                            <td class="second-best">0.512</td>
+                            <td class="best">0.3690</td>
+                            <td class="best">0.968</td>
+                            <td class="best">0.200</td>
+                            <td class="best">0.068</td>
+                            <td class="best">0.563</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="results-table">
+                <p class="table-caption">
+                    <strong>Human preference.</strong> Users overwhelmingly prefer <em>Captain Safari</em>
+                    across all criteria, capturing <strong>67%</strong> of total votes. The memory-removed variant ranks
+                    a distant second, while baselines competitors receive single-digit preference.
+                </p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Video Quality</th>
+                            <th>3D consistency</th>
+                            <th>Trajectory Following</th>
+                            <th>Average</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="model-name">Geometry Forcing</td>
+                            <td>0.20%</td>
+                            <td>0.00%</td>
+                            <td>0.20%</td>
+                            <td>0.13%</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Real-CamI2V</td>
+                            <td>4.20%</td>
+                            <td>6.40%</td>
+                            <td>4.40%</td>
+                            <td>5.00%</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Wan2.2-5B-Control-Camera</td>
+                            <td>3.20%</td>
+                            <td>3.80%</td>
+                            <td>6.40%</td>
+                            <td>4.47%</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Captain Safari w/o <em>Mem.</em></td>
+                            <td>25.00%</td>
+                            <td>24.20%</td>
+                            <td>20.00%</td>
+                            <td>23.07%</td>
+                        </tr>
+                        <tr>
+                            <td class="model-name">Captain Safari</td>
+                            <td class="best">67.40%</td>
+                            <td class="best">65.60%</td>
+                            <td class="best">69.00%</td>
+                            <td class="best">67.33%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-header" style="margin-top: 6rem;">
+                <h2 class="section-title">Qualitative Comparison</h2>
+            </div>
+
+            <div class="comparison-grid">
+                <!-- Comparison 1 -->
+                <div class="result-card">
+                    <video class="result-video" autoplay muted loop playsinline>
+                        <source src="asset/b67f708a-0dbb-41e0-8283-c6bb756f6fbc_10_comparison.mp4" type="video/mp4">
+                    </video>
+                    <div class="result-info">
+                        <span class="result-label">Prompt</span>
+                        <p class="result-prompt">A swift journey through a verdant forest, capturing the essence of
+                            nature in motion.</p>
+                    </div>
+                </div>
+
+                <!-- Comparison 2 -->
+                <div class="result-card">
+                    <video class="result-video" autoplay muted loop playsinline>
+                        <source src="asset/99421ffe-cb3a-477b-b90f-bad484a30b0f_10_comparison.mp4" type="video/mp4">
+                    </video>
+                    <div class="result-info">
+                        <span class="result-label">Prompt</span>
+                        <p class="result-prompt">Soaring over rugged terrain towards a distant valley under a bright
+                            sky.</p>
+                    </div>
+                </div>
+
+                <!-- Comparison 3 -->
+                <div class="result-card">
+                    <video class="result-video" autoplay muted loop playsinline>
+                        <source src="asset/cb9a1f18-8fee-46bd-a103-24f703696082_10_comparison.mp4" type="video/mp4">
+                    </video>
+                    <div class="result-info">
+                        <span class="result-label">Prompt</span>
+                        <p class="result-prompt">Aerial view of a soccer field surrounded by lush green hills and misty
+                            cliffs.</p>
+                    </div>
+                </div>
+
+                <!-- Comparison 4 -->
+                <div class="result-card">
+                    <video class="result-video" autoplay muted loop playsinline>
+                        <source src="asset/1cc10a3e-031b-45c5-a15e-040eee648040_5_comparison.mp4" type="video/mp4">
+                    </video>
+                    <div class="result-info">
+                        <span class="result-label">Prompt</span>
+                        <p class="result-prompt">A thrilling descent through rugged terrain under a cloudy sky.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="results">
+        <div class="section-header">
+            <span class="section-label">Gallery</span>
+            <h2 class="section-title">Qualitative Results</h2>
+        </div>
+
+        <div class="results-grid">
+            <!-- Video 1 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/ef42c13a-e129-42a8-abb2-041074db7982_5.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/ef42c13a-e129-42a8-abb2-041074db7982_5_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">A serene beach with waves crashing and palm trees lining the shore
+                                under a
+                                bright blue sky.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 2 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/f4f03bcb-6738-4671-95dc-8a4d17fb1c9c_0.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/f4f03bcb-6738-4671-95dc-8a4d17fb1c9c_0_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">A serene coastal view unfolds, with the sun casting a bright,
+                                sparkling
+                                path across the turquoise waters as the camera glides over the rocky shoreline towards a
+                                lush
+                                green hillside.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 3 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/0bb4eeb9-5e17-4743-acd4-fd97379d2353_0.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/0bb4eeb9-5e17-4743-acd4-fd97379d2353_0_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">Aerial view capturing the stunning contrast between rugged cliffs
+                                and
+                                turquoise waters.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 4 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/cf349ee5-6177-4b85-8bb8-24877dbb565b_5.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/cf349ee5-6177-4b85-8bb8-24877dbb565b_5_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">A thrilling snowmobile ride through a sunlit forest at sunset.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 5 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/a8182580-8f07-4031-92aa-bfbbcf0f540c_5.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/a8182580-8f07-4031-92aa-bfbbcf0f540c_5_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">Aerial view soaring over snow-covered mountain peaks under a clear
+                                sky.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 6 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/79dd605d-ce01-49d9-8ef6-6d5c56896c94_0.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/79dd605d-ce01-49d9-8ef6-6d5c56896c94_0_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">Exploring an abandoned, graffiti-covered structure with crumbling
+                                walls and
+                                overgrown vegetation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 7 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/357ed73c-f2bb-40be-9d91-0294d4238b96_0.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/357ed73c-f2bb-40be-9d91-0294d4238b96_0_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">Aerial view of ancient ruins by the sea.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 8 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/549f798e-480f-4619-a443-dc89afd9e5df_0.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/549f798e-480f-4619-a443-dc89afd9e5df_0_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">Exploring ancient ruins under a bright sky.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 9 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/79dd605d-ce01-49d9-8ef6-6d5c56896c94_10.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/79dd605d-ce01-49d9-8ef6-6d5c56896c94_10_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">Exploring an abandoned building with vibrant graffiti and broken
+                                windows.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 10 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/7a63ff1d-a3ea-4850-ad51-0827db1dd0e9_5.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/7a63ff1d-a3ea-4850-ad51-0827db1dd0e9_5_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">A scenic drive through a mountainous valley, featuring lush green
+                                fields
+                                and snow-capped peaks under a bright blue sky.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 11 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/9c4a3058-e079-4254-8c04-62800e74a1cf_5.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/9c4a3058-e079-4254-8c04-62800e74a1cf_5_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">A steam train speeds through a rugged, mountainous landscape,
+                                leaving a
+                                trail of smoke behind.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video 12 -->
+            <div class="result-card">
+                <video class="result-video" autoplay muted loop playsinline>
+                    <source src="asset/a104b67c-2efa-43aa-8614-a2b0bc95543a_0.mp4" type="video/mp4">
+                </video>
+                <div class="result-info">
+                    <div class="result-details">
+                        <div class="result-trajectory">
+                            <span class="result-label">Trajectory</span>
+                            <img src="asset/a104b67c-2efa-43aa-8614-a2b0bc95543a_0_extrinsic.png"
+                                alt="Camera Trajectory">
+                        </div>
+                        <div class="result-text">
+                            <span class="result-label">Prompt</span>
+                            <p class="result-prompt">A breathtaking aerial view of snow-covered mountain peaks under a
+                                clear
+                                sky.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="bibtex">
+        <div class="section-header">
+            <span class="section-label">Citation</span>
+            <h2 class="section-title">BibTeX</h2>
+        </div>
+        <div class="bibtex-container">
+            <div class="bibtex-header">
+                <span>BibTeX</span>
+                <button class="copy-btn" onclick="copyBibtex()">Copy</button>
+            </div>
+            <pre class="bibtex-code">
+@inproceedings{chou2026captain,
+  title={Captain Safari: A World Engine},
+  author={Chou, Yu-Cheng and Wang, Xingrui and Li, Yitong and Wang, Jiahao and Liu, Hanting and Xie, Cihang and Yuille, Alan and Xiao, Junfei},
+  booktitle={Preprint},
+  year={2026}
+}</pre>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#">Paper</a>
+                <a href="#">Code</a>
+                <a href="#">Dataset</a>
+            </div>
+            <p class="footer-text">Copyright © 2026 Captain Safari Team. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Copy BibTeX functionality
+        function copyBibtex() {
+            const bibtex = document.querySelector('.bibtex-code').textContent;
+            navigator.clipboard.writeText(bibtex).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = 'Copy', 2000);
+            });
+        }
+    </script>
+
+</body>
+
+</html>
